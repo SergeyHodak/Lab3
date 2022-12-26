@@ -1,0 +1,313 @@
+Лабораторна робота 3. Розробка об'єктно-орієнтованих програм з використанням дженериків.
+
+Завдання: Реалізувати клас - універсальна банківська карта.
+Функціонал: Реалізувати клас (і демонстраційний консольний додаток до нього), що описує банківський рахунок користувача
+з наступними полями:
+    id - може бути рядком або цифрою, має бути узагальнено;
+    ПІБ клієнта - рядок;
+    кредитний рахунок - має бути цілим числом;
+    особистий рахунок - може бути числом із плаваючою точкою (Float);
+та методами: що
+    повертає інформацію про клієнта за id – має бути узагальнений;
+    повертає кредитний (якщо він не 0) або особистий рахунок (якщо він не 0), або їхню суму (Double, якщо не 0 обидва);
+
+Опис роботи:
+Дженерики (узагальнення) - це особливі засоби Java для реалізації узагальненого програмування: особливого підходу до
+опису даних та алгоритмів, що дозволяє працювати з різними типами даних без зміни їх опису. Узагальнені типи та методи
+дозволяють нам уникнути жорсткого визначення використовуваних типів.
+Розглянемо проблему, в якій вони можуть знадобитися. Допустимо, ми визначаємо клас для подання банківського рахунку.
+Наприклад, він міг би виглядати так:
+    package com.company;
+    public class Account {
+        private int id;
+        private int sum;
+        Account(int id, int sum) {
+            this.id = id;
+            this.sum = sum;
+        }
+        public int getId() {
+            return id;
+        }
+        public int getSum() {
+            return sum;
+        }
+        public void setSum(int sum) {
+            this.sum = sum;
+        }
+    }
+Клас Account має два поля: id - унікальний ідентифікатор рахунку та sum - сума на рахунку. У цьому випадку
+ідентифікатор заданий як ціле значення. Однак нерідко для ідентифікатора використовуються і рядкові значення.
+І числові, і рядкові значення мають свої плюси та мінуси. І на момент написання класу ми можемо не знати, що краще
+вибрати для зберігання ідентифікатора - рядки або числа. Або, можливо, цей клас буде використовуватися іншими
+розробниками, які можуть мати свою думку щодо цієї проблеми. Наприклад, як тип id вони захочуть використати якийсь
+свій клас. На перший погляд ми можемо вирішити цю проблему наступним чином: задати id як поле типу Object, що є
+універсальним та базовим суперкласом для всіх інших типів:
+    public class Account {
+        private Object id;
+        private int sum;
+        Account(Object id, int sum) {
+            this.id = id;
+            this.sum = sum;
+        }
+        public Object getId() {
+            return id;
+        }
+        public int getSum() {
+            return sum;
+        }
+        public void setSum(int sum) {
+            this.sum = sum;
+        }
+    }
+
+    public class Main {
+        public static void main(String [] args) {
+            Account acc1 = new Account (2334, 5000); // id - число
+            int acc1Id = (int)acc1.getId();
+            System.out.println(acc1Id);
+
+            Account acc2 = new Account("sid5523", 5000); // id - рядок
+            System.out.println(acc2.getId());
+        }
+    }
+В даному випадку все чудово працює, проте ми стикаємося з проблемою безпеки типів. Наприклад, у наступному випадку ми
+отримаємо помилку:
+    Account acc2 = new Account("sid5523", 5000); // id – рядок
+    System.out.println((int)acc2.getId()); // java.lang.ClassCastException
+Писати для кожного окремого типу свою версію класу Account теж не є добрим рішенням, тому що в цьому випадку ми змушені
+повторюватися. Ці проблеми були покликані усунути узагальнення або generics. Узагальнення дозволяють не вказувати тип,
+який буде використовуватися. Тому визначимо клас Account як узагальнений:
+    public class Account <T> {
+        private T id;
+        private int sum;
+        Account(T id, int sum) {
+            this.id = id;
+            this.sum = sum;
+        }
+        public T getId() {
+            return id;
+        }
+        public int getSum() {
+            return sum;
+        }
+        public void setSum(int sum) {
+            this.sum = sum;
+        }
+    }
+За допомогою літери T у визначенні класу class Account<T> ми вказуємо, що цей тип T використовуватиметься цим класом.
+Параметр T у кутових дужках називається універсальним параметром, оскільки замість нього можна підставити будь-який тип.
+При цьому ми не знаємо, який саме це буде тип: String, int або якийсь інший. Причому літера T обрана умовно, це може
+будь-яка інша літера чи набір символів.
+Після оголошення класу ми можемо застосувати універсальний параметр T: так далі в класі оголошується змінна цього типу,
+якій потім надається значення в конструкторі. Метод getId() повертає значення змінної id, але оскільки дана змінна
+представляє тип T, цей метод також повертає об'єкт типу T: public T getId().
+Використовуємо цей клас:
+    public static void main(String [] args) {
+        Account <Integer> acc1 = new Account <> (2334, 5000); // id - число
+        int acc1Id = (int)acc1.getId();
+        System.out.println(acc1Id);
+        Account<String> acc2 = new Account<>("sid5523", 5000); // id - рядок
+        System.out.println(acc2.getId());
+        // при спробі привести acc2 до не рядка - відразу отримаємо повідомлення про помилку
+    }
+При визначенні змінної класу і створенні об'єкта після імені класу в кутових дужках потрібно вказати, який саме тип буде
+використовуватися замість універсального параметра. При цьому треба враховувати, що дженерики працюють лише з об'єктами,
+але не працюють із примітивними типами. Тобто ми можемо написати Account<Integer>, але не можемо використовувати тип int
+або double, наприклад Account<int>. Замість примітивних типів треба використовувати класи-обгортки: Integer замість int,
+Double замість double і т.д.
+Крім узагальнених типів можна також створювати узагальнені методи, які також використовуватимуть універсальні параметри.
+Наприклад, розглянемо метод для узагальненого виведення у консоль:
+    public class Printer {
+        public <T> void print(T[] items) {
+            for(T item: items) {
+                System.out.println(item);
+            }
+        }
+    }
+
+    public class Main {
+        public static void main(String[] args) {
+            Printer printer = new Printer();
+            String[] people = {"Tom", "Alice", "Sam", "Kate", "Bob", "Helen"};
+            Integer[] numbers = {23, 4, 5, 2, 13, 456, 4};
+            printer.<String>print(people);
+            printer.<Integer>print(numbers);
+        }
+    }
+Аналогічно описаним прикладам, узагальнювати можна також інтерфейси та методи, при цьому можна збільшувати кількість
+узагальнених типів:
+    public class Printer {
+        public <T, S> void print(T[] items, S additionalString) {
+            for(T item: items) {
+                System.out.print(item);
+                System.out.print("");
+                System.out.print(additionalString);
+                System.out.print("\n");
+            }
+        }
+    }
+
+    public class Main {
+        public static void main(String[] args){
+            Printer printer = new Printer();
+            String[] people = {"Tom", "Alice", "Sam", "Kate", "Bob", "Helen"};
+            Integer[] numbers = {23, 4, 5, 2, 13, 456, 4};
+            printer.<String, Integer>print(people, 10);
+            printer.<Integer, String>print(numbers, "hello!");
+        }
+    }
+Коли ми вказуємо універсальний параметр у узагальнень, то за замовчуванням може представляти будь-який тип. Однак іноді
+необхідно, щоб параметр відповідав лише обмеженому набору типів. У цьому випадку застосовуються обмеження, що дозволяють
+вказати базовий клас, якому має відповідати параметр.
+Для установки обмеження після універсального параметра ставиться слово extends, після якого вказується базовий клас
+обмеження:
+    class Account {}
+    class Transaction<T extends Account> {}
+Наприклад, у разі для параметра T в Transaction обмеженням є клас Account. Тобто на місце параметра T ми можемо передати
+або клас Account, або один із його класів-спадкоємців.
+Розглянемо таку програму:
+    public class Program {
+        public static void main(String[] args) {
+            Account acc1 = new Account("1876", 4500);
+            Account acc2 = new Account("3476", 1500);
+            Transaction<Account> tran1 = new Transaction<Account>(acc1,acc2цц, 4000);
+            tran1.execute();
+            tran1 = new Transaction<Account>(acc1,acc2, 4000);
+            tran1.execute();
+        }
+    }
+
+    class Transaction<T extends Account> {
+        private T from; // з якого рахунку переказ
+        private T to; // на який рахунок переказ
+        private int sum; // сума переказу
+        Transaction(T from, T to, int sum) {
+            this.from = from;
+            this.to = to;
+            this.sum = sum;
+        }
+        public void execute() {
+            if (from.getSum() > sum) {
+                from.setSum(from.getSum() - sum);
+                to.setSum(to.getSum() + sum);
+                System.out.printf("Account %s: %d \nAccount %s: %d \n",
+                from.getId(), from.getSum(),to.getId(), to.getSum());
+            } else {
+                System.out.printf("Operation is invalid");
+            }
+        }
+    }
+
+    class Account {
+        private String id;
+        private int sum;
+        Account(String id, int sum) {
+            this.id = id;
+            this.sum = sum;
+        }
+        public String getId() {
+            return id;
+        }
+        public int getSum() {
+            return sum;
+        }
+        public void setSum(int sum) {
+            this.sum = sum;
+        }
+    }
+У цьому випадку клас Transaction, який представляє операцію переказу коштів між двома рахунками, типізований
+параметром T, у якого як обмеження встановлено клас Account. При створенні об'єкта Transaction до його конструктора
+передаються два об'єкти Account - два рахунки, між якими треба здійснити переказ, і сума переказу.
+При цьому важливо розуміти, що оскільки ми встановили подібне обмеження, компілятор буде розпізнавати об'єкти типу T
+як об'єкти типу Account. І тут ми можемо викликати в об'єктів типу T методи класу Account. І ми не змогли б це зробити,
+якби ми не задали такого обмеження.
+Важливою особливістю дженериків є інваріантність. Розглянемо наведений код:
+    public class Main {
+        public static void main(String[] args) {
+            List<Integer> ints = Arrays.asList(1,2,3);
+            List<Number> nums = ints; // compile-time error. Проблема виявилася на етапі компіляції
+            nums.set(2, 3.14);
+            assert ints.toString().equals("[1, 2, 3.14]");
+        }
+    }
+Якщо взяти список цілих чисел, він не буде ні підтипом типу Number, ні будь-яким іншим підтипом. Він є лише підтипом
+самого себе. Тобто List<Integer> - це List<Integer> і нічого більше. Компілятор дбає про те, щоб змінна ints, оголошена
+як список об'єктів класу Integer, містила тільки об'єкти класу Integer і нічого крім них. На етапі компіляції
+проводиться перевірка, і в рантаймі вже нічого не впаде.
+Тепер розглянемо наступний приклад - нехай у нас є узагальнений клас Average, який містить метод, який обчислює
+середньоарифметичне значення чисел деякого масиву:
+    public class Average<T extends Number> {
+        private T[] array;
+        public Average(T[] array) {
+            this.array = array;
+        }
+        public double average() {
+            double sum = 0.0;
+            for (T value: array) {
+                sum += value.doubleValue();
+            }
+            return sum / array.length;
+        }
+    }
+Уявіть, що ми хочемо додати метод для порівняння середніх значень масивів класу Average, причому типи масивів можуть
+бути різні. Так як Average є параметризований тип, який тип параметра вказати для Average, коли створіть параметр методу
+типу Average? Напрошується наступний варіант:
+    public class Average<T extends Number> {
+        private T[] array;
+        public Average(T[] array) {
+            this.array = array;
+        }
+        public double average() {
+            double sum = 0.0;
+            for (T value: array) {
+                sum += value.doubleValue();
+            }
+            return sum / array.length;
+        }
+        boolean sameAvg(Average<T> ob) {
+            return average() == ob.average();
+        }
+    }
+
+    public class Main {
+        public static void main(String[] args) {
+            Integer intArray[] = {1, 2, 3, 4, 5};
+            Double doubleArray[] = {1.1, 2.2, 3.3, 4.4, 5.5};
+            Average<Integer> iob = new Average<>(intArray);
+            Average<Double> dob = new Average<>(doubleArray);
+            if (iob.sameAvg(dob)) {
+                System.out.println("are the same.");
+            } else {
+                System.out.println("differ.");
+            }
+        }
+    }
+Але це не спрацює, тому що в цьому випадку метод sameAvg прийматиме аргументи тільки того ж типу, що й існуючий об'єкт.
+Щоб створити узагальнену версію методу sameAvg(), слід скористатися іншим засобом узагальнення Java - метасимвольним
+аргументом. Метасимвольний аргумент позначається знаком? та представляє невідомий тип.
+    boolean sameAvg(Average<?> ob) {
+        return average() == ob.average();
+    }
+Метасимвол не впливає на тип створюваних об'єктів класу Average. Це визначається оператором extends в оголошенні класу
+Average. Метасимвол просто збігається з будь-яким достовірним об'єктом класу Average. Метасимвольні аргументи можуть
+бути обмежені майже так само, як і параметри типів. Обмежувати метасимвольний аргумент особливо важливо під час
+створення узагальненого типу, що оперує ієрархією класів.
+
+Узагальнені класи можуть брати участь в ієрархії успадкування: можуть успадковуватися з інших, або виконувати роль
+базових класів. При успадкуванні від узагальненого класу клас-спадкоємець повинен передавати дані про тип у конструкції
+базового класу:
+    class Account<T> {
+        приватний T _id;
+        T getId() {
+            return _id;
+        }
+        Account(T id) {
+            _id = id;
+        }
+    }
+
+    class DepositAccount<T> extends Account<T> {
+        DepositAccount(T id) {
+            super(id);
+        }
+    }
